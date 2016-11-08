@@ -962,8 +962,8 @@ function DefaultKeyDownHandler( uiKey:number )
 	-- END: select next city
 
 	-- START: city panel
-	--local pCity = UI.GetHeadSelectedCity();
-	--if( pCity ~= nil ) then
+	local pCity = UI.GetHeadSelectedCity();
+	if( pCity ~= nil ) then
 		if( uiKey == Keys.Z ) then
 			LuaEvents.CityPanel_ToggleOverviewPanel();
 		end
@@ -982,7 +982,7 @@ function DefaultKeyDownHandler( uiKey:number )
 		if( uiKey == Keys.R ) then
 			LuaEvents.CityPanel_ToggleProduction();
 		end
-	--end
+	end
 	-- END: city panel
 
 	-- START: place map pin
@@ -3299,9 +3299,9 @@ function Initialize()
 	InterfaceModeMessageHandler[InterfaceModeTypes.SELECTION]			[MouseEvents.LButtonDoubleClick] = OnSelectionDoubleTap;	
 	InterfaceModeMessageHandler[InterfaceModeTypes.VIEW_MODAL_LENS]		[MouseEvents.LButtonUp]		= OnMouseSelectionEnd;
 	InterfaceModeMessageHandler[InterfaceModeTypes.MAKE_TRADE_ROUTE]	[MouseEvents.LButtonUp]		= OnMouseMakeTradeRouteEnd;
-	InterfaceModeMessageHandler[InterfaceModeTypes.MAKE_TRADE_ROUTE]	[MouseEvents.MButtonDown]	= OnMouseMakeTradeRouteSnapToPlot;
+	--InterfaceModeMessageHandler[InterfaceModeTypes.MAKE_TRADE_ROUTE]	[MouseEvents.MButtonDown]	= OnMouseMakeTradeRouteSnapToPlot;
 	InterfaceModeMessageHandler[InterfaceModeTypes.TELEPORT_TO_CITY]	[MouseEvents.LButtonUp]		= OnMouseTeleportToCityEnd;
-	InterfaceModeMessageHandler[InterfaceModeTypes.TELEPORT_TO_CITY]	[MouseEvents.MButtonDown]	= OnMouseTeleportToCitySnapToPlot;
+	--InterfaceModeMessageHandler[InterfaceModeTypes.TELEPORT_TO_CITY]	[MouseEvents.MButtonDown]	= OnMouseTeleportToCitySnapToPlot;
 	InterfaceModeMessageHandler[InterfaceModeTypes.DISTRICT_PLACEMENT]	[MouseEvents.LButtonUp]		= OnMouseDistrictPlacementEnd;
 	InterfaceModeMessageHandler[InterfaceModeTypes.DISTRICT_PLACEMENT]	[MouseEvents.RButtonUp]		= OnMouseDistrictPlacementCancel;
 	InterfaceModeMessageHandler[InterfaceModeTypes.DISTRICT_PLACEMENT]	[MouseEvents.MouseMove]		= OnMouseDistrictPlacementMove;
