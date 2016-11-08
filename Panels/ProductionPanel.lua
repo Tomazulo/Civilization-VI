@@ -463,7 +463,7 @@ function View(data)
 		Controls.NoFaithContent:SetHide(true);
 	end
 
-	m_tabs.SelectTab(m_productionTab);
+	--m_tabs.SelectTab(m_productionTab);
 end
 
 function ResetInstanceVisibility(productionItem: table)
