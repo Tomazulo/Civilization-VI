@@ -82,6 +82,11 @@ InterfaceModeMessageHandler =
 local DefaultMessageHandler		:table	= {};
 local m_actionHotkeyToggleGrid	:number = Input.GetActionId("ToggleGrid");		--	Hot Key Handling
 local m_actionHotkeyOnlinePause	:number = Input.GetActionId("OnlinePause");		--	Hot Key Handling
+local m_actionHotkeyToggleYield	:number = Input.GetActionId("ToggleYield");		--	Hot Key Handling
+local m_actionHotkeyPrevUnit	:number = Input.GetActionId("PrevUnit");		--	Hot Key Handling
+local m_actionHotkeyNextUnit	:number = Input.GetActionId("NextUnit");		--	Hot Key Handling
+local m_actionHotkeyPrevCity	:number = Input.GetActionId("PrevCity");		--	Hot Key Handling
+local m_actionHotkeyNextCity	:number = Input.GetActionId("NextCity");		--	Hot Key Handling
 local m_kTouchesDownInWorld		:table	= {};		-- Tracks "down" touches that occurred in this context.
 local m_isTouchEnabled			:boolean= false;
 local m_isALTDown				:boolean= false;
@@ -923,8 +928,9 @@ function DefaultKeyDownHandler( uiKey:number )
 			ReadyForDragMap();
 		end
     end
+
     if uiKey == Keys.VK_SHIFT then
-    	if m_isSHIFTDown == false then
+   	    if m_isSHIFTDown == false then
     		m_isSHIFTDown = true;
     	end
     end
@@ -948,18 +954,6 @@ function DefaultKeyDownHandler( uiKey:number )
 	if( keyPanChanged == true ) then
 		ProcessPan(m_edgePanX,m_edgePanY);
 	end
-
-	-- START: select next city
-	local kCity:table = UI.GetHeadSelectedCity();
-	if( m_isALTDown == false and uiKey == Keys.VK_TAB ) then
-		if m_isSHIFTDown then
-			UI.SelectPrevCity(kCity);
-		else
-	    	UI.SelectNextCity(kCity);
-	    end
-	    UI.PlaySound("UI_Click_Sweetener_Metal_Button_Small");
-	end
-	-- END: select next city
 
 	-- START: city panel
 	local pCity = UI.GetHeadSelectedCity();
@@ -998,12 +992,6 @@ function DefaultKeyDownHandler( uiKey:number )
 	end
 	-- END: toggle strategic map
 
-	-- START: select next unit
-	if( uiKey == Keys.VK_OEM_3 ) then --VK_OEM_3 is tilde (`)
-	    UI.SelectNextReadyUnit();
-	end
-	-- END: select next unit
-
 	return false;
 end
 
@@ -1019,12 +1007,12 @@ function DefaultKeyUpHandler( uiKey:number )
 			ReadyForDragMap();
 		end
     end
+
     if uiKey == Keys.VK_SHIFT then
-    	if m_isSHIFTDown == true then
+        if m_isSHIFTDown == true then
     		m_isSHIFTDown = false;
     	end
     end
-
 
 	if( uiKey == Keys.VK_UP or uiKey == Keys.W ) then
 		m_isUPpressed = false;
@@ -1527,8 +1515,42 @@ end
 -- ===========================================================================
 --	Start touch, until release or move, do not take action.
 -- ===========================================================================
+function OnTouchDebugEnd( pInputStruct:table )
+
+	-- If last touch in a sequence or double tapping.
+	if m_touchCount > 0 then
+		return true;
+	end
+
+	-- If a drag was occurring, end it; otherwise attempt selection of whatever
+	-- is in the plot the mouse is currently at.
+	if m_isTouchDragging then
+		m_isTouchDragging = false;
+	else
+		if m_touchTotalNum == 1 then
+			print("Debug placing!!!");
+			local plotID:number = UI.GetCursorPlotID();
+			if (Map.IsPlot(plotID)) then
+				local edge = UI.GetCursorNearestPlotEdge();
+				DebugPlacement( plotID, edge );
+			end
+		else
+			print("Debug removing!!!");
+			OnDebugCancelPlacement( pInputStruct );
+		end
+	end
+
+	EndDragMap(); -- Reset any dragging
+	m_touchTotalNum	= 0;
+	m_isTouchZooming	= false;
+	m_touchStartPlotX	= -1;
+	m_touchStartPlotY	= -1;
+	return true;
+end
+
 function OnTouchSelectionStart( pInputStruct:table )
 
+	-- Determine maximum # of touches that have occurred.
 	if m_touchCount > m_touchTotalNum then
 		m_touchTotalNum = m_touchCount;
 	end
@@ -3194,9 +3216,37 @@ function OnInputActionTriggered( actionId )
         -- TODO: query if already on (or will get out of sync with button presses!)
         ms_bGridOn = not ms_bGridOn;
         UI.ToggleGrid( ms_bGridOn );
-    end
 
-    if actionId == m_actionHotkeyOnlinePause then
+    elseif actionId == m_actionHotkeyToggleYield then
+        if m_bShowYield then
+            LuaEvents.MinimapPanel_HideYieldIcons();
+            m_bShowYield = false;
+            UI.PlaySound("Play_UI_Click");
+        else
+            LuaEvents.MinimapPanel_ShowYieldIcons();
+            m_bShowYield = true;
+            UI.PlaySound("Play_UI_Click");
+        end
+
+    elseif actionId == m_actionHotkeyPrevUnit then
+        UI.SelectPrevReadyUnit();
+        UI.PlaySound("Play_UI_Click");
+
+    elseif actionId == m_actionHotkeyNextUnit then
+        UI.SelectNextReadyUnit();
+        UI.PlaySound("Play_UI_Click");
+
+    elseif actionId == m_actionHotkeyPrevCity then
+        local curCity:table = UI.GetHeadSelectedCity();
+        UI.SelectPrevCity(curCity);
+        UI.PlaySound("Play_UI_Click");
+
+    elseif actionId == m_actionHotkeyNextCity then
+        local curCity:table = UI.GetHeadSelectedCity();
+        UI.SelectNextCity(curCity);
+        UI.PlaySound("Play_UI_Click");
+
+    elseif actionId == m_actionHotkeyOnlinePause then
         if GameConfiguration.IsNetworkMultiplayer() then
             TogglePause();
         end
@@ -3228,6 +3278,7 @@ function Initialize()
 	--DefaultMessageHandler[MouseEvents.LButtonUp]													= OnMouseEnd;
 	DefaultMessageHandler[MouseEvents.MButtonDown]													= OnMouseStart;
 	DefaultMessageHandler[MouseEvents.MButtonUp]													= OnMouseEnd;
+
 	DefaultMessageHandler[MouseEvents.MouseMove]													= OnMouseMove;	
 	DefaultMessageHandler[MouseEvents.RButtonUp]													= OnDefaultChangeToSelectionMode;
 	DefaultMessageHandler[MouseEvents.PointerUp]													= OnDefaultChangeToSelectionMode;
@@ -3336,7 +3387,9 @@ function Initialize()
 
 	-- Touch Events (if a touch system)
 	if m_isTouchEnabled then
-		InterfaceModeMessageHandler[InterfaceModeTypes.DEBUG]				[MouseEvents.PointerUp]		= DebugPlacement;
+		InterfaceModeMessageHandler[InterfaceModeTypes.DEBUG]				[MouseEvents.PointerDown]	= OnTouchStart;
+		InterfaceModeMessageHandler[InterfaceModeTypes.DEBUG]				[MouseEvents.PointerUpdate] = OnTouchUpdate;
+		InterfaceModeMessageHandler[InterfaceModeTypes.DEBUG]				[MouseEvents.PointerUp]		= OnTouchDebugEnd;
 		InterfaceModeMessageHandler[InterfaceModeTypes.SELECTION]			[MouseEvents.PointerDown]	= OnTouchSelectionStart;
 		InterfaceModeMessageHandler[InterfaceModeTypes.SELECTION]			[MouseEvents.PointerUpdate] = OnTouchSelectionUpdate;
 		InterfaceModeMessageHandler[InterfaceModeTypes.SELECTION]			[MouseEvents.PointerUp]		= OnTouchSelectionEnd;
